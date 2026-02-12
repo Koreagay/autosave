@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}koreangay{% endblock %}
+{% block addressbar %}koreangay{% endblock %}
+{% block content %}
+<div class="min-h-screen app-bg overflow-x-hidden macos-content">
+  <section class="relative min-h-screen flex items-center justify-center overflow-hidden hero-section">
+    <div class="absolute inset-0 hero-overlay"></div>
+    <div class="container relative z-10 text-center">
+      <div class="hero-card p-12 md:p-20 max-w-5xl mx-auto">
+        <h1 class="brand-title mb-6 animate-fade-in-up">koreangay<sup class="brand-tm">™</sup></h1>
+        <p class="hero-subtitle text-xl md:text-2xl mb-8 font-light animate-fade-in-up">
+          버그판·무료 컨텐츠 링크를 한곳에.<br>
+          골라 둔 링크 모음, 버그판 집합소.
+        </p>
+      </div>
+    </div>
+    <div class="hero-scroll-hint">
+      <div class="hero-scroll-bar">
+        <div class="hero-scroll-dot"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="products" class="py-24 relative">
+    <div class="container">
+      <header class="products-section-header">
+        <p class="products-section-label">Unlocked</p>
+        <h2 class="products-section-title">Free Picks</h2>
+        <p class="products-section-desc">Curated links. No paywall.</p>
+        <div class="product-search-wrap">
+          <input type="text" id="product-search-input" class="input product-search-input" placeholder="게임 이름 검색..." autocomplete="off" aria-label="게임 이름 검색" />
+          <button type="button" id="product-search-btn" class="btn btn-primary product-search-btn" aria-label="검색">검색</button>
+        </div>
+      </header>
+      <div id="products-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 products-grid">
+        <div class="text-center py-12" style="color: var(--muted-foreground);">로딩 중...</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="footer-brand-name">koreangay<sup class="footer-tm">™</sup></span>
+          <p class="footer-tagline">Curated.</p>
+        </div>
+        <div class="footer-legal">
+          <p class="footer-copy">© 2026 koreangay</p>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}제품 관리 - koreangay{% endblock %}
+{% block addressbar %}Admin · 제품 관리{% endblock %}
+{% block content %}
+<div class="min-h-screen p-8 app-bg">
+  <div class="container mx-auto">
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-bold text-gradient">제품 관리</h1>
+      <div class="flex gap-2">
+        <button id="admin-add-btn" type="button" class="btn btn-primary gap-2">+ 제품 추가</button>
+        <button id="admin-logout-btn" type="button" class="btn btn-outline gap-2">로그아웃</button>
+      </div>
+    </div>
+
+    <div class="card glass-effect">
+      <div class="card-header">
+        <h2 class="card-title">제품 목록</h2>
+      </div>
+      <div class="card-content">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>이름</th>
+              <th>카테고리</th>
+              <th>코드</th>
+              <th>작업</th>
+            </tr>
+          </thead>
+          <tbody id="admin-products-tbody">
+            <tr><td colspan="5" class="text-center py-8" style="color: var(--muted-foreground);">로딩 중...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="admin-product-dialog" class="dialog-overlay admin-dialog-overlay" aria-modal="true" aria-hidden="true">
+      <div class="dialog-content admin-dialog-content glass-effect">
+        <div class="dialog-header relative">
+          <h3 class="dialog-title" id="dialog-title">제품 추가</h3>
+          <p class="card-description">제품 정보를 입력하세요. 이미지는 드래그 앤 드롭하거나 URL을 입력할 수 있습니다.</p>
+          <button type="button" class="btn btn-ghost btn-icon" style="position:absolute;top:1rem;right:1rem;" data-close-dialog>✕</button>
+        </div>
+        <form id="admin-product-form" class="dialog-body space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="label">제품명 *</label>
+              <input name="name" type="text" class="input" placeholder="예: Chronos Perpetual" required />
+            </div>
+            <div class="space-y-2">
+              <label class="label">카테고리 *</label>
+              <input name="category" type="text" class="input" placeholder="예: Timepiece" required />
+            </div>
+          </div>
+          <div class="space-y-2">
+            <label class="label">제품 코드</label>
+            <input name="code" type="text" class="input" placeholder="예: CHR-001" />
+          </div>
+          <div class="space-y-2">
+            <label class="label">간단 설명 *</label>
+            <textarea name="description" class="textarea" rows="3" placeholder="제품에 대한 간단한 설명" required></textarea>
+          </div>
+          <div class="space-y-2">
+            <label class="label">상세 설명</label>
+            <textarea name="detailedDescription" class="textarea" rows="5" placeholder="제품에 대한 상세한 설명"></textarea>
+          </div>
+          <div class="space-y-2">
+            <label class="label">가격 (숫자만)</label>
+            <input name="price" type="text" class="input price-input-numeric" inputmode="numeric" pattern="[0-9]*" placeholder="0 또는 금액" maxlength="15" />
+            <p class="price-hint text-muted-foreground">무료는 <strong>0</strong>, 유료는 금액만 숫자로 입력. 표시: 0원 → 무료, 1원 이상 → 1,000원 [ 유료 ]</p>
+          </div>
+          <div class="space-y-2">
+            <label class="label">다운로드 링크</label>
+            <input name="downloadUrl" type="url" class="input" placeholder="https://play.google.com/... 또는 https://apps.apple.com/..." />
+            <p class="price-hint text-muted-foreground">스토어·다운로드 페이지 URL. 제품 상세에서 "다운로드" 버튼으로 연결됩니다.</p>
+          </div>
+          <div class="space-y-2">
+            <label class="label">이미지</label>
+            <div class="img-upload-zone border-2 rounded-lg p-8 text-center" style="border-color: var(--border); border-style: dashed;">
+              <img class="img-preview max-h-48 mx-auto rounded-lg mb-2" style="display: none;" alt="Preview" />
+              <input type="file" accept="image/*" class="hidden" />
+              <p class="mb-2" style="color: var(--muted-foreground);">이미지를 드래그 앤 드롭하거나</p>
+              <div class="flex gap-2 justify-center">
+                <button type="button" class="btn btn-outline img-file-btn">파일 선택</button>
+                <button type="button" class="btn btn-outline img-url-btn">URL 입력</button>
+              </div>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <label class="label">사양</label>
+            <div class="flex gap-2">
+              <input type="text" class="input flex-1 spec-input" placeholder="사양을 입력하고 Enter" />
+              <button type="button" class="btn btn-outline add-spec-btn">추가</button>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-2 specs-list"></div>
+          </div>
+          <div class="space-y-2">
+            <label class="label">주요 특징</label>
+            <div class="flex gap-2">
+              <input type="text" class="input flex-1 feature-input" placeholder="특징을 입력하고 Enter" />
+              <button type="button" class="btn btn-outline add-feature-btn">추가</button>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-2 features-list"></div>
+          </div>
+          <div class="flex justify-end gap-2 pt-4">
+            <button type="button" class="btn btn-outline" data-close-dialog>취소</button>
+            <button type="submit" class="btn btn-primary">추가</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
