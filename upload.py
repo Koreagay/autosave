@@ -32,6 +32,7 @@ GIT_USER_EMAIL = ""
 
 
 def run(cmd, cwd=None, check=True, capture=True):
+    """capture=False 면 터미널에 진행률·속도 등이 실시간 출력됨."""
     flags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
     try:
         r = subprocess.run(
@@ -49,7 +50,10 @@ def run(cmd, cwd=None, check=True, capture=True):
         print("  3. 설치 후 명령 프롬프트/터미널을 다시 연 뒤 이 스크립트 실행")
         raise SystemExit(1)
     if check and r.returncode != 0:
-        raise RuntimeError(r.stderr or r.stdout or f"exit {r.returncode}")
+        msg = r.stderr or r.stdout or f"exit {r.returncode}"
+        if not msg and not capture:
+            msg = "명령 실패 (위 터미널 메시지 참고)"
+        raise RuntimeError(msg)
     return r
 
 
@@ -145,6 +149,27 @@ def has_files_to_upload():
     return False
 
 
+def format_size(n):
+    """바이트를 읽기 쉬운 크기 문자열로."""
+    for u in ("B", "KB", "MB", "GB"):
+        if n < 1024:
+            return f"{n:.1f} {u}"
+        n /= 1024
+    return f"{n:.1f} TB"
+
+
+def list_staged_with_size():
+    """스테이징된 파일 목록과 총 크기 반환 (업로드 예정 표시용)."""
+    r = run(["git", "diff", "--cached", "--name-only"], capture=True)
+    names = (r.stdout or "").strip().splitlines()
+    total = 0
+    for path in names:
+        full = os.path.join(REPO_ROOT, path)
+        if os.path.isfile(full):
+            total += os.path.getsize(full)
+    return names, total
+
+
 def upload():
     """이 폴더 내용을 Git LFS 포함해 commit & push."""
     ensure_folders()
@@ -177,9 +202,18 @@ def upload():
             print("[안내] 변경된 파일이 없습니다 (이미 동일한 상태).")
             input("엔터를 누르면 종료합니다...")
             return
+        # 업로드 예정 파일 목록·총 크기 표시
+        names, total = list_staged_with_size()
+        print("\n[업로드 예정]")
+        for name in names:
+            full = os.path.join(REPO_ROOT, name)
+            sz = format_size(os.path.getsize(full)) if os.path.isfile(full) else "-"
+            print(f"  {name}  ({sz})")
+        print(f"  총 크기: {format_size(total)}\n")
         run(["git", "commit", "-m", "Upload apk and windows files (LFS)"])
-        run(["git", "push", "-u", "origin", "HEAD"])
-        print("[완료] GitHub에 업로드되었습니다.")
+        print("[푸시 중] 아래에 진행률·업로드 속도가 표시됩니다.\n")
+        run(["git", "push", "--progress", "-u", "origin", "HEAD"], capture=False)
+        print("\n[완료] GitHub에 업로드되었습니다.")
     except Exception as e:
         print(f"[오류] git 실패: {e}")
     input("엔터를 누르면 종료합니다...")
