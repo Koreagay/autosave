@@ -178,6 +178,12 @@ def upload():
             input("엔터를 누르면 종료합니다...")
             return
         run(["git", "commit", "-m", "Upload apk and windows files (LFS)"])
+        # 원격에 새 커밋이 있으면 먼저 가져와서 합친 뒤 푸시
+        run(["git", "fetch", "origin"], check=False)
+        for branch in ("master", "main"):
+            r = run(["git", "merge", f"origin/{branch}", "--no-edit"], check=False)
+            if r.returncode == 0:
+                break
         run(["git", "push", "-u", "origin", "HEAD"])
         print("[완료] GitHub에 업로드되었습니다.")
     except Exception as e:
