@@ -145,18 +145,6 @@ def has_files_to_upload():
     return False
 
 
-def pull_latest():
-    """원격에 있는 파일 가져와서 합침. 덮어쓰지 않고 추가만 하려면 필수."""
-    run(["git", "fetch", "origin"], check=False)
-    # 원격 브랜치가 있으면 merge (원격 파일 + 로컬 파일 유지)
-    for branch in ["master", "main"]:
-        r = run(["git", "merge", f"origin/{branch}", "--no-edit"], check=False)
-        if r.returncode == 0:
-            print(f"[확인] 원격 {branch} 내용 가져와서 합쳤습니다 (기존 파일 유지).")
-            return
-    # 원격에 커밋이 없거나 브랜치가 없으면 그냥 진행 (첫 푸시)
-
-
 def upload():
     """이 폴더 내용을 Git LFS 포함해 commit & push."""
     ensure_folders()
@@ -180,9 +168,6 @@ def upload():
         print("[안내] apk, windows 폴더에 올릴 파일이 없습니다. 파일을 넣은 뒤 다시 실행하세요.")
         input("엔터를 누르면 종료합니다...")
         return
-
-    # 원격에 있던 파일 가져와서 합침 (덮어쓰기 방지, 추가만 함)
-    pull_latest()
 
     try:
         run(["git", "add", ".gitattributes"], check=False)
