@@ -17,6 +17,9 @@ UPLOAD_FOLDERS = ["apk", "windows"]
 # Git LFS로 추적할 확장자 (100MB 넘어도 GitHub 업로드 가능)
 LFS_EXTENSIONS = [".apk", ".xapk", ".exe", ".msi", ".zip", ".rar", ".7z", ".iso", ".dmg", ".pkg"]
 
+# GitHub LFS 파일당 최대 크기 (2GB). 이보다 크면 업로드 불가.
+LFS_MAX_FILE_BYTES = 2 * 1024 * 1024 * 1024
+
 # 이 폴더가 아직 Git 레포가 아닐 때 사용할 원격 URL (비어 있으면 기존 origin 사용)
 # 새로 시작할 때: 여기에 GitHub 레포 URL 입력 (예: https://github.com/사용자/레포.git)
 GITHUB_REPO_URL = "https://github.com/Koreagay/autosave"
@@ -145,6 +148,24 @@ def has_files_to_upload():
     return False
 
 
+def check_lfs_size_limit():
+    """이 폴더 전체에서 2GB 넘는 파일 찾기 (.git 제외). git add . 에 포함되는 모든 경로 검사."""
+    oversized = []
+    for root, dirs, files in os.walk(REPO_ROOT, topdown=True):
+        dirs[:] = [d for d in dirs if d != ".git"]
+        for f in files:
+            path = os.path.join(root, f)
+            if os.path.isfile(path):
+                try:
+                    size = os.path.getsize(path)
+                except OSError:
+                    continue
+                if size > LFS_MAX_FILE_BYTES:
+                    rel = os.path.relpath(path, REPO_ROOT).replace("\\", "/")
+                    oversized.append((rel, size))
+    return oversized
+
+
 def upload():
     """이 폴더 내용을 Git LFS 포함해 commit & push."""
     ensure_folders()
@@ -169,7 +190,25 @@ def upload():
         input("엔터를 누르면 종료합니다...")
         return
 
+    # GitHub LFS는 파일당 2GB 제한. 넘으면 푸시 실패하므로 미리 막음
+    oversized = check_lfs_size_limit()
+    if oversized:
+        print("[오류] GitHub는 파일당 2GB까지만 허용합니다. 아래 파일이 제한을 넘습니다.")
+        for rel, size in oversized:
+            gb = size / (1024 ** 3)
+            print(f"  {rel}  ({gb:.2f} GB)")
+        print("\n  해결: 2GB 이하로 나누거나 압축·분할 후 다시 시도하세요.")
+        input("엔터를 누르면 종료합니다...")
+        sys.exit(1)
+
     try:
+        # 먼저 원격 가져와서 합침 → 기존에 GitHub에 있던 파일 유지, 덮어쓰기 방지
+        run(["git", "fetch", "origin"], check=False)
+        for branch in ("master", "main"):
+            r = run(["git", "merge", f"origin/{branch}", "--no-edit"], check=False)
+            if r.returncode == 0:
+                print(f"[확인] 원격 내용 가져와서 합쳤습니다 (기존 파일 유지).")
+                break
         run(["git", "add", ".gitattributes"], check=False)
         run(["git", "add", "."])
         r = run(["git", "status", "--short"], capture=True)
@@ -178,16 +217,19 @@ def upload():
             input("엔터를 누르면 종료합니다...")
             return
         run(["git", "commit", "-m", "Upload apk and windows files (LFS)"])
-        # 원격에 새 커밋이 있으면 먼저 가져와서 합친 뒤 푸시
-        run(["git", "fetch", "origin"], check=False)
-        for branch in ("master", "main"):
-            r = run(["git", "merge", f"origin/{branch}", "--no-edit"], check=False)
-            if r.returncode == 0:
-                break
         run(["git", "push", "-u", "origin", "HEAD"])
         print("[완료] GitHub에 업로드되었습니다.")
     except Exception as e:
+        err = str(e)
         print(f"[오류] git 실패: {e}")
+        if "2147483648" in err or "Size must be less than" in err:
+            print("\n  [2GB 넘는 파일이 이미 커밋된 상태]")
+            print("  CMD에서 아래 두 줄만 순서대로 실행한 뒤,")
+            print("  apk 또는 windows 폴더에서 2GB 넘는 파일을 옮기거나 삭제하고 upload.py 다시 실행하세요.")
+            print()
+            print("    cd /d \"{}\"".format(REPO_ROOT))
+            print("    git reset --soft HEAD~1")
+            print()
     input("엔터를 누르면 종료합니다...")
 
 
