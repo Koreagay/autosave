@@ -202,13 +202,7 @@ def upload():
         sys.exit(1)
 
     try:
-        # 먼저 원격 가져와서 합침 → 기존에 GitHub에 있던 파일 유지, 덮어쓰기 방지
-        run(["git", "fetch", "origin"], check=False)
-        for branch in ("master", "main"):
-            r = run(["git", "merge", f"origin/{branch}", "--no-edit"], check=False)
-            if r.returncode == 0:
-                print(f"[확인] 원격 내용 가져와서 합쳤습니다 (기존 파일 유지).")
-                break
+        # 바로 add → commit → push (fetch/merge 없이 빠르게 업로드)
         run(["git", "add", ".gitattributes"], check=False)
         run(["git", "add", "."])
         r = run(["git", "status", "--short"], capture=True)
